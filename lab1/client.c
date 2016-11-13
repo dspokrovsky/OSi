@@ -30,13 +30,14 @@ struct msgbuf{
 }buf_msg;
 
 int main(){
-    int fd=-1,i=0,z=0;
+    int fd=-1,i=0,z=10;
     fd=msgget(1567,0);
     while(fd==-1)
     {
         if (z==0) return 0;
-        sleep(1);
+        sleep(2);
         fd=msgget(1567,0);
+        if(fd!=-1) break;
         z--;
     }
     printf("[Client]: connected to msg queue\n");
@@ -45,7 +46,6 @@ int main(){
         perror("[Client]: failed to read the messege.\n");
         return 0;
     }
-
     char cmd[MSGMAX];
     char name[MSGMAX];
     memset(name,'\0',MSGMAX);
@@ -63,7 +63,7 @@ int main(){
         memset(cmd,'\0',MSGMAX);
         fscanf(fp2,"%s",name);
         if (name[0]== '\0') break;
-        strcat(cmd,"grep 'trap' ");// %s | wc -l",name);
+        strcat(cmd,"grep 'trap' ");
         strcat(cmd, name);
         strcat(cmd, " | wc -l ");
         FILE* fp3 = popen(cmd,"r");
