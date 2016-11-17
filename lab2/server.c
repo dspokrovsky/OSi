@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 #include <sys/shm.h>
 #include <string.h>
-
+#include <time.h>
 union semun
 {
     int val;
@@ -32,23 +32,44 @@ int main()
         printf("Ошибка в semget\n");
         return 1;
     }
-    printf("[SERVER: locked]\n");
+    printf("[SERVER]: locked]\n");
     semop(semd,lock,1);
-    printf("[SERVER: unlocked]\n");
+    printf("[SERVER]: unlocked]\n");
+
+    char cmd [1000];
+    memset(cmd,'\0', sizeof(cmd));
+
+    strcpy(cmd,"who | grep -E '");
+    strcat(cmd,addr);
+    memset(addr,'\0', sizeof(addr));
+    strcat(cmd,"' |awk '{print $1,$4}'");
+
     // time & last pr >>> write in addr
-    printf("[SERVER]:%s\n",addr);
+    printf("[SERVER]:%s\n",cmd);
 
-    //memset(addr,'\o',sizeof(addr));
+    FILE* fd = popen(cmd,"r");
+    char i;
+    int j =0;
+
+    while (!feof(fd)){
+        i = fgetc(fd);
+        addr[j]=i;
+        j++;
+    }
+
+    j--;
+    addr[j]='\0';
 
 
-    //last pr
+    //time last process
     if (semctl(semd,0,GETPID,arg) == -1) perror("semctl ");
-    arg.buf->sem_otime;
+    //time_t t = arg.buf->sem_otime;
 
 
-
-
+    semop(semd,unlock,1);
+    semop(semd,lock,1);
     //del
     if (semctl(semd,0,IPC_RMID,0) == -1) perror("semctl rmid");
+    if (shmctl(memd,IPC_RMID,0) == -1) perror("semctl rmid");
  return 0;
 }

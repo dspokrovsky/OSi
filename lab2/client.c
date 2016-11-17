@@ -6,18 +6,21 @@
 #include <sys/shm.h>
 #include <string.h>
 
-struct sembuf op = {0,1,0};
+struct sembuf unlock[1] = {0,1,0};
+struct sembuf lock[1] = {0, -1, 0};
 int main()
 {
 
-    int memd = shmget(1567,1024,0);
+    int memd = shmget(1567,0,0);
     if (memd ==-1){
         perror("not today");
         return -2;
     }
+
     char *addr=(char*)shmat(memd,0,0);//
     memset(addr,'\0',sizeof(addr));
-    FILE* fd = popen("who","r");
+    printf("[CLIENT]: connected & ready to write;\n");
+    FILE* fd = popen("users","r");
     char buf_user[100];
     while(!feof(fd)){ // !feof(fd)
         memset(buf_user,'\0',sizeof(buf_user));
@@ -26,10 +29,14 @@ int main()
         strcat(addr,"\n");
     }
     int semd = semget(1567,1,0);
-    semop(semd,&op,1);
+    printf("[CLIENT]: server was unlocked\n");
+    semop(semd,unlock,1);
+    printf("[CLIENT]: client was locked\n");
+    semop(semd,lock,1);
 
-    printf("%s\n",addr);
+    printf("[Client]: %s \n",addr);
 
+    semop(semd,unlock,1);
 
     return 0;
 }
