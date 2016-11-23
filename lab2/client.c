@@ -11,13 +11,14 @@ struct sembuf lock[1] = {0, -1, 0};
 int main()
 {
 
-    int memd = shmget(1567,0,0);
+    int memd = shmget(1568,0,0);
     if (memd ==-1){
         perror("not today");
         return -2;
     }
 
-    char *addr=(char*)shmat(memd,0,0);//
+    char *addr=(char*)shmat(memd,0,0);
+    if (addr == (char*)(-1)) {perror("shmat"); exit(1);}
     memset(addr,'\0',sizeof(addr));
     printf("[CLIENT]: connected & ready to write;\n");
     FILE* fd = popen("users","r");
@@ -28,7 +29,7 @@ int main()
         strcat(addr,buf_user);
         strcat(addr,"\n");
     }
-    int semd = semget(1567,1,0);
+    int semd = semget(1566,1,0);
     printf("[CLIENT]: server was unlocked\n");
     semop(semd,unlock,1);
     printf("[CLIENT]: client was locked\n");

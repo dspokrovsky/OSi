@@ -15,18 +15,18 @@ union semun
 
 struct sembuf unlock[1] = {0, 1, 0};
 struct sembuf lock[1] = {0, -1, 0};
-struct sembuf check[1] = {0, 0, 0};
+
 
 int main()
 {
-    int memd = shmget(1567, 1024, IPC_CREAT | 0664);
+    int memd = shmget(1568, 1024, IPC_CREAT | 0664);
     char *addr=(char*)shmat(memd,0,0);
     if(addr ==(char*)-1){
-        printf("shmat error");
+        perror("Shmat error");
         return 1;
     }
     //sema
-    int semd = semget(1567, 2, IPC_CREAT | 0664);
+    int semd = semget(1566, 2, IPC_CREAT | 0664);
     if (semd == -1)
     {
         printf("Ошибка в semget\n");
@@ -35,37 +35,28 @@ int main()
     printf("[SERVER]: locked]\n");
     semop(semd,lock,1);
     printf("[SERVER]: unlocked]\n");
-
     char cmd [1000];
     memset(cmd,'\0', sizeof(cmd));
-
-    strcpy(cmd,"who | grep -E '");
-    strcat(cmd,addr);
-    memset(addr,'\0', sizeof(addr));
-    strcat(cmd,"' |awk '{print $1,$4}'");
-
+    strcpy(cmd, "n=$(who | wc -l)\nwhile [ $n != 0 ]\ndo\necho $(who | head -n $n |tail -n 1 |awk '{print $1}') $(date -d@$(( $(date -ud now +%s) - $(date -ud \"$(who | head -n $n |tail -n 1 |awk '{print $3,$4}')\" +%s) )) +'%H:%M')\nlet \" n = $n - 1 \" \ndone");
     // time & last pr >>> write in addr
-    printf("[SERVER]:%s\n",cmd);
-
+    printf("[SERVER]: go \n");
     FILE* fd = popen(cmd,"r");
+    printf("[SERVER]: go+ \n");
     char i;
     int j =0;
-
     while (!feof(fd)){
         i = fgetc(fd);
         addr[j]=i;
         j++;
     }
-
     j--;
     addr[j]='\0';
+    printf("[SERVER]: %s \n",addr);
 
-
-    //time last process
-    if (semctl(semd,0,GETPID,arg) == -1) perror("semctl ");
-    //time_t t = arg.buf->sem_otime;
-
-
+    //time last process TODO
+    //if (semctl(semd,0,GETPID,arg) == -1) perror("semctl ");
+    //printf("%ju\n",arg.buf->sem_otime);
+    printf("[SERVER]: give id to client \n");
     semop(semd,unlock,1);
     semop(semd,lock,1);
     //del
