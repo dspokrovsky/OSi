@@ -19,6 +19,8 @@ struct sembuf lock[1] = {0, -1, 0};
 
 int main()
 {
+    struct semid_ds buf;
+    arg.buf=&buf;
     int memd = shmget(1568, 1024, IPC_CREAT | 0664);
     char *addr=(char*)shmat(memd,0,0);
     if(addr ==(char*)-1){
@@ -32,16 +34,10 @@ int main()
         printf("Ошибка в semget\n");
         return 1;
     }
-    printf("[SERVER]: locked]\n");
+    //printf("[SERVER]: locked]\n");
     semop(semd,lock,1);
-    printf("[SERVER]: unlocked]\n");
-    char cmd [1000];
-    memset(cmd,'\0', sizeof(cmd));
-    strcpy(cmd, "n=$(who | wc -l)\nwhile [ $n != 0 ]\ndo\necho $(who | head -n $n |tail -n 1 |awk '{print $1}') $(date -d@$(( $(date -ud now +%s) - $(date -ud \"$(who | head -n $n |tail -n 1 |awk '{print $3,$4}')\" +%s) )) +'%H:%M')\nlet \" n = $n - 1 \" \ndone");
-    // time & last pr >>> write in addr
-    printf("[SERVER]: go \n");
-    FILE* fd = popen(cmd,"r");
-    printf("[SERVER]: go+ \n");
+    //printf("[SERVER]: unlocked]\n");
+    FILE* fd = popen("./t","r");
     char i;
     int j =0;
     while (!feof(fd)){
@@ -51,16 +47,15 @@ int main()
     }
     j--;
     addr[j]='\0';
-    printf("[SERVER]: %s \n",addr);
-
-    //time last process TODO
-    //if (semctl(semd,0,GETPID,arg) == -1) perror("semctl ");
-    //printf("%ju\n",arg.buf->sem_otime);
-    printf("[SERVER]: give id to client \n");
+    //printf("[SERVER]: %s \n",addr);
+    //time last process
+    if (semctl(semd,0,IPC_STAT,arg) == -1) {perror("semctl "); return 2;}
+    strcat(addr, asctime(localtime(&arg.buf->sem_otime)));
+    //printf("[SERVER]: give time to client \n");
     semop(semd,unlock,1);
     semop(semd,lock,1);
     //del
     if (semctl(semd,0,IPC_RMID,0) == -1) perror("semctl rmid");
-    if (shmctl(memd,IPC_RMID,0) == -1) perror("semctl rmid");
+    if (shmctl(memd,IPC_RMID,0) == -1) perror("shmctl rmid");
  return 0;
 }
