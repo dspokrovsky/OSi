@@ -1,8 +1,6 @@
 #include <stdio.h>
-#include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
-#include <sys/stat.h>
 #include <sys/shm.h>
 #include <string.h>
 #include <time.h>
@@ -22,13 +20,13 @@ int main()
     struct semid_ds buf;
     arg.buf=&buf;
     int memd = shmget(1568, 1024, IPC_CREAT | 0664);
-    char *addr=(char*)shmat(memd,0,0);
+    char *addr=/*(char*)*/shmat(memd,0,0);
     if(addr ==(char*)-1){
         perror("Shmat error");
         return 1;
     }
     //sema
-    int semd = semget(1566, 2, IPC_CREAT | 0664);
+    int semd = semget(1566, 1, IPC_CREAT | 0664);
     if (semd == -1)
     {
         printf("Ошибка в semget\n");
@@ -55,6 +53,7 @@ int main()
     semop(semd,unlock,1);
     semop(semd,lock,1);
     //del
+	sleep(30);
     if (semctl(semd,0,IPC_RMID,0) == -1) perror("semctl rmid");
     if (shmctl(memd,IPC_RMID,0) == -1) perror("shmctl rmid");
  return 0;

@@ -1,5 +1,5 @@
-clear
-cat README.md
+#clear
+#cat README.md
 
  
 gcc client.c -o client
